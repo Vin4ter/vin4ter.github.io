@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>555</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .monitor-container {
+            position: relative;
+            width: 100%;
+            max-width: 1024px;
+            height: auto;
+            aspect-ratio: 1024 / 812;
+            background-image: url('./index_files/crt_555.jpg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .terminal-area {
+            position: absolute;
+            left: 38.476%;
+            top: 50.492%;
+            width: 24.317%;
+            height: 22.660%;
+            background: transparent;
+            padding: 2% 3%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow: hidden;
+            z-index: 2;
+            transform: rotate(-0.5deg);
+            transform-origin: top left;
+        }
+
+        .terminal-text {
+            color: #00FF41;
+            text-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41;
+            font-size: clamp(5px, 1.5vw, 13px);
+            line-height: 1.05;
+            white-space: pre-wrap;
+            word-break: break-all;
+            animation: textGlow 0.2s infinite alternate;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        @keyframes textGlow {
+            0% { text-shadow: 0.4px 0 1px rgba(0,255,65,0.7), -0.4px 0 1px rgba(0,255,65,0.4), 0 0 6px; }
+            100% { text-shadow: 2.8px 0 2px rgba(0,255,65,0.8), -2.8px 0 2px rgba(0,255,65,0.5), 0 0 12px; }
+        }
+
+        .blinking-cursor {
+            display: inline-block;
+            width: 0.5em;
+            height: 1em;
+            background: #00FF41;
+            box-shadow: 0 0 6px #00FF41;
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Кнопка управления звуком */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #00FF41;
+            text-shadow: 0 0 8px #00FF41;
+            z-index: 100;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: color 0.3s ease;
+        }
+        .sound-toggle:hover {
+            color: #FFFFFF;
+            text-shadow: 0 0 15px #00FF41, 0 0 25px #FFFFFF;
+        }
+
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            background: 
+                repeating-linear-gradient(0deg,
+                    rgba(0,0,0,0.12) 0px,
+                    rgba(0,0,0,0.12) 1px,
+                    transparent 1px,
+                    transparent 3px),
+                radial-gradient(ellipse at 50% 50%,
+                    rgba(255,240,210,0.15) 0%,
+                    rgba(0,0,0,0.3) 50%,
+                    rgba(0,0,0,0.7) 100%);
+            background-size: 100% 4px, 100% 100%;
+            animation: crtFlicker 0.08s infinite alternate;
+        }
+
+        @keyframes crtFlicker {
+            0% { opacity: 0.96; }
+            100% { opacity: 1.0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Фоновый звук -->
+    <audio id="bg-audio" loop preload="auto" style="display:none;">
+        <source src="./index_files/asmr_old_pc.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="monitor-container">
+        <div class="terminal-area">
+            <div class="terminal-text" id="terminalOutput"></div>
+            <span class="blinking-cursor" id="cursor"></span>
+        </div>
+    </div>
+
+    <!-- Кнопка звука -->
+    <button class="sound-toggle" id="sound-toggle" title="Вкл/Выкл звук">
+        <i class="fas fa-volume-up"></i>
+    </button>
+
+    <div class="crt-overlay"></div>
+
+    <script>
+        (function() {
+            const terminal = document.getElementById('terminalOutput');
+            const cursor = document.getElementById('cursor');
+
+            const lines = [
+                'bash v555',
+                'login: alexey',
+                'passwd: po***a',
+                'continue login',
+                'please enter Y or N',
+                'Y',
+                'login succefully',
+                'to alexey!',
+                'fixing error of',
+                'system bash v555...',
+                'ping 5.5.5',
+                'recived packet at',
+                'now 5:55pm saturday',
+                'ping 0ms ttl=999+',
+                'systemd will be wait...',
+                'systemd status bash service',
+                'ok'
+            ];
+
+            let currentLineIndex = 0;
+            let currentCharIndex = 0;
+            let displayedLines = [];
+
+            function typeNextChar() {
+                if (currentLineIndex >= lines.length) {
+                    cursor.style.display = 'none';
+                    terminal.textContent = displayedLines.join('\n');
+                    return;
+                }
+
+                const line = lines[currentLineIndex];
+                if (currentCharIndex < line.length) {
+                    const char = line.charAt(currentCharIndex);
+                    if (displayedLines.length === 0 || currentCharIndex === 0) {
+                        displayedLines.push('');
+                    }
+                    displayedLines[displayedLines.length - 1] += char;
+                    currentCharIndex++;
+                    terminal.textContent = displayedLines.join('\n');
+                    setTimeout(typeNextChar, 25 + Math.random() * 25);
+                } else {
+                    currentLineIndex++;
+                    currentCharIndex = 0;
+
+                    while (displayedLines.length > 5) {
+                        displayedLines.shift();
+                    }
+
+                    if (currentLineIndex < lines.length) {
+                        displayedLines.push('');
+                        terminal.textContent = displayedLines.join('\n');
+                        setTimeout(typeNextChar, 100);
+                    } else {
+                        terminal.textContent = displayedLines.join('\n');
+                        cursor.style.display = 'none';
+                    }
+                }
+            }
+
+            setTimeout(typeNextChar, 1000);
+
+            // --- Управление звуком ---
+            const bgAudio = document.getElementById('bg-audio');
+            const soundToggle = document.getElementById('sound-toggle');
+            const soundIcon = soundToggle.querySelector('i');
+
+            let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+
+            function updateSoundUI() {
+                if (soundEnabled) {
+                    soundIcon.className = 'fas fa-volume-up';
+                    bgAudio.play().catch(() => {});
+                } else {
+                    soundIcon.className = 'fas fa-volume-mute';
+                    bgAudio.pause();
+                }
+                localStorage.setItem('soundEnabled', soundEnabled);
+            }
+
+            soundToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                soundEnabled = !soundEnabled;
+                updateSoundUI();
+            });
+
+            updateSoundUI();
+
+            // Запуск звука при первом клике в любом месте (если заблокировано)
+            document.addEventListener('click', function unlockAudio() {
+                if (soundEnabled && bgAudio.paused) {
+                    bgAudio.play().catch(() => {});
+                }
+                document.removeEventListener('click', unlockAudio);
+            }, { once: true });
+
+        })();
+    </script>
+</body>
+</html>

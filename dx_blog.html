@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ru" prefix="og: http://ogp.me/ns#">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>FM DXing уловы · Alexey</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Open Graph (будет заполняться динамически) -->
+    <meta property="og:title" content="FM DXing уловы · Alexey" id="og-title">
+    <meta property="og:description" content="Лучшие FM‑DX уловы" id="og-desc">
+    <meta property="og:image" content="./index_files/dx1.jpg" id="og-image">
+    <meta property="og:url" content="" id="og-url">
+    <meta property="og:type" content="website">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', 'Tahoma', sans-serif; }
+
+        [data-theme="winxp"] {
+            --primary-color: #316AC5; --primary-dark: #1C3F94; --text-primary: #000000;
+            --text-secondary: #3A3A3A; --background: #ECE9D8; --surface: #F7F5EF;
+            --divider: #B5C7E7; --shadow: rgba(0,0,0,0.25); --footer-bg: #1E4B9C;
+            --footer-text: #FFFFFF; --xp-frame-outer: #0019CF; --xp-frame-inner: #0855DD;
+        }
+
+        body {
+            background-color: #000; background-image: url('./index_files/back_xp.jpg');
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            background-attachment: fixed; position: relative; margin: 0; overflow-x: hidden;
+            font-family: 'Tahoma','Trebuchet MS','Roboto',sans-serif;
+        }
+
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999;
+            background: 
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 3px),
+                radial-gradient(ellipse at 50% 50%, rgba(255,240,210,0.2) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.5) 90%),
+                radial-gradient(ellipse at 50% 50%, rgba(255,180,80,0.25) 0%, rgba(0,0,0,0.1) 100%);
+            background-size: 100% 4px, 120% 120%, 100% 100%;
+            background-position: center; mix-blend-mode: multiply;
+            animation: crtFlicker 0.08s infinite alternate;
+        }
+
+        @keyframes crtFlicker { 0% { opacity: 0.96; } 100% { opacity: 1.0; } }
+        @keyframes textGlow { 0% { text-shadow: 0.4px 0 1px rgba(0,30,255,0.5), -0.4px 0 1px rgba(255,0,80,0.3); } 100% { text-shadow: 2.6px 0 1px rgba(0,30,255,0.5), -2.6px 0 1px rgba(255,0,80,0.3); } }
+        h1, h2, h3, .logo, .section-title { animation: textGlow 0.15s infinite; }
+
+        .section-title {
+            position: absolute; top: 0; left: 0; right: 0; height: 30px; line-height: 30px;
+            margin: 0; padding: 0 14px; color: #FFFFFF !important; font-size: 1rem;
+            font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.5); z-index: 3;
+            display: flex; align-items: center;
+        }
+
+        header {
+            background: #000000 !important; border-bottom: 2px solid #00FF41 !important;
+            box-shadow: 0 0 20px rgba(0,255,65,0.3), inset 0 1px 0 rgba(0,255,65,0.2);
+            min-height: 52px; position: fixed; width: 100%; top: 0; z-index: 1000;
+        }
+        .logo { color: #00FF41 !important; text-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41; font-weight: 700; font-size: 1.4rem; letter-spacing: 1px; text-decoration: none; }
+        nav { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; }
+        .nav-left { display: flex; align-items: center; gap: 2rem; }
+        .nav-links { display: flex; list-style: none; }
+        .nav-links li { margin-left: 2rem; }
+        .nav-links a { color: #00FF41 !important; font-weight: 400; text-shadow: 0 0 8px #00FF41; font-size: 0.95rem; letter-spacing: 0.5px; text-decoration: none; }
+        .nav-links a:hover { color: #FFFFFF !important; text-shadow: 0 0 15px #00FF41; }
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #00FF41; }
+
+        section {
+            background: rgba(236,233,216,0.85); backdrop-filter: blur(2px);
+            border: 2px solid var(--xp-frame-outer); border-radius: 10px 10px 0 0;
+            box-shadow: 0 0 0 1px var(--xp-frame-inner), 0 4px 18px rgba(0,0,0,0.4);
+            margin-top: 2rem; margin-bottom: 2rem; padding: 0; position: relative; overflow: hidden;
+        }
+        section::before {
+            content: ''; display: block;
+            background: linear-gradient(180deg, #003FCC, #005AF5, #0068FF, #3388FF, #0068FF, #005AF5, #003FCC);
+            height: 30px; border-radius: 8px 8px 0 0; position: relative; z-index: 2;
+        }
+        .container { max-width: 1200px; margin: 5rem auto 2rem; padding: 0 2rem; }
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; padding: 1.5rem; }
+        .dx-card { 
+            background: rgba(255,255,255,0.9); 
+            border: 2px solid var(--xp-frame-outer); 
+            border-radius: 8px; 
+            box-shadow: 0 0 0 1px var(--xp-frame-inner), 0 3px 10px rgba(0,0,0,0.3); 
+            cursor: pointer; 
+            transition: 0.2s; 
+            position: relative;
+            overflow: hidden;
+        }
+        .dx-card:hover { transform: translateY(-4px); }
+        .dx-card img { width: 100%; height: 160px; object-fit: cover; }
+        .dx-card-body { padding: 1rem; }
+        .dx-card-body h3 { color: #1C3F94; font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: 400; }
+        .dx-card-body p { font-weight: 400; }
+        .season-tabs { display: flex; gap: 10px; padding: 0.5rem 1.5rem; flex-wrap: wrap; position: relative; z-index: 1; }
+        .season-tab { background: linear-gradient(180deg, #F8F8F6, #D0D0D0); border: 1px solid #003C74; border-radius: 8px; padding: 0.4rem 1.2rem; cursor: pointer; box-shadow: 0 0 0 1px #98B7E9; font-weight: 400; }
+        .season-tab.active { background: linear-gradient(180deg, #C8C8C8, #E0E0E0); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 2000; overflow-y: auto; backdrop-filter: blur(5px); }
+        .modal-content { background: rgba(236,233,216,0.95); backdrop-filter: blur(4px); margin: 2rem auto; max-width: 800px; border: 2px solid var(--xp-frame-outer); border-radius: 10px 10px 6px 6px; box-shadow: 0 0 0 1px var(--xp-frame-inner), 0 10px 40px rgba(0,0,0,0.6); animation: modalAppear 0.3s ease-out; }
+        @keyframes modalAppear { from { opacity:0; transform: translateY(-50px) scale(0.9); } }
+        .modal-header { background: linear-gradient(180deg, #003FCC, #005AF5, #0068FF, #3388FF, #0068FF, #005AF5, #003FCC); border-bottom: 2px solid #002288; padding: 2px 8px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; min-height: 30px; }
+        .modal-header h2 { 
+            color: #fff; 
+            font-size: 1rem; 
+            font-weight: 700 !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            animation: textGlow 0.15s infinite;
+        }
+        .close-btn-img { width: 24px; height: 24px; cursor: pointer; }
+        .modal-body { padding: 1.5rem; }
+        .video-container { position: relative; width: 100%; margin-bottom: 1rem; }
+        .video-container video { width: 100%; display: block; border: 1px solid #B5C7E7; }
+        #mapContainer, #globalMapContainer { height: 350px; margin-bottom: 1rem; border: 1px solid #B5C7E7; background: #f0f0f0; }
+        .details-table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.7); border: 1px solid #B5C7E7; margin-bottom: 1rem; }
+        .details-table td { padding: 8px 12px; border-bottom: 1px solid #B5C7E7; font-weight: 400; }
+        .details-table td:first-child { color: #1C3F94; width: 40%; }
+        .details-table a { color: #1C3F94; text-decoration: underline; cursor: pointer; }
+        .details-table a:hover { color: #003FCC; }
+        .leaflet-bottom.leaflet-right { display: none !important; }
+        .image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
+        .image-overlay.active { display: flex; }
+        .image-overlay img { max-width: 90%; max-height: 80%; object-fit: contain; border-radius: 8px; }
+        .image-close-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; width: 60px; height: 60px; border-radius: 50%; cursor: pointer; }
+
+        .forecast-img { max-width: 100%; height: auto; border: 1px solid #B5C7E7; border-radius: 4px; }
+        .global-legend { background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; line-height: 1.6; box-shadow: 0 2px 8px rgba(0,0,0,0.3); max-height: 300px; overflow-y: auto; }
+        .legend-item { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px; font-weight: 400; }
+        .legend-color { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #333; }
+        .legend-text { color: #000; text-shadow: 0 0 2px white; font-weight: 400; }
+
+        .custom-popup { 
+            min-width: 220px; 
+            font-family: 'Tahoma', 'Trebuchet MS', 'Roboto', sans-serif;
+            background: #ECE9D8;
+            padding: 2px;
+        }
+        .custom-popup h4 { 
+            margin: 0 0 8px 0; 
+            color: #1C3F94; 
+            font-size: 1rem; 
+            font-weight: 400;
+            border-bottom: 1px solid #B5C7E7;
+            padding-bottom: 4px;
+        }
+        .custom-popup p { 
+            margin: 3px 0; 
+            font-size: 0.85rem; 
+            font-weight: 400;
+            color: #000;
+        }
+        .custom-popup .popup-btn { 
+            display: inline-block; 
+            margin-top: 10px; 
+            padding: 5px 16px; 
+            background: linear-gradient(180deg, #FFFFFF, #ECE9D8);
+            color: #000000;
+            border: 1px solid #003C74;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 400;
+            font-family: 'Tahoma', 'Trebuchet MS', 'Roboto', sans-serif;
+            box-shadow: 0 0 0 1px #98B7E9, inset 0 1px 0 rgba(255,255,255,0.8);
+            text-decoration: none;
+            letter-spacing: 0.3px;
+        }
+        .custom-popup .popup-btn:hover {
+            background: linear-gradient(180deg, #F7F5EF, #D0D0D0);
+            border-color: #0019CF;
+            box-shadow: 0 0 0 1px #6B8ED6, inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .custom-popup .popup-btn:active {
+            background: linear-gradient(180deg, #D0D0D0, #F7F5EF);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Общий контейнер для действий (реакции + поделиться) */
+        .card-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            gap: 8px;
+        }
+        .reactions-block {
+            display: flex;
+            gap: 6px;
+        }
+        .reaction-btn {
+            background: linear-gradient(180deg, #FFFFFF, #ECE9D8);
+            border: 1px solid #003C74;
+            border-radius: 3px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 400;
+            font-family: 'Tahoma', 'Trebuchet MS', 'Roboto', sans-serif;
+            box-shadow: 0 0 0 1px #98B7E9, inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: background 0.15s;
+            line-height: 1.4;
+        }
+        .reaction-btn:hover {
+            background: linear-gradient(180deg, #F7F5EF, #D0D0D0);
+            border-color: #0019CF;
+            box-shadow: 0 0 0 1px #6B8ED6, inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .reaction-btn.active {
+            background: linear-gradient(180deg, #E0E8F0, #C8D0E0);
+            border-color: #000080;
+            box-shadow: 0 0 0 1px #5070B0, inset 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .reaction-btn .count {
+            margin-left: 4px;
+            font-weight: 700;
+        }
+
+        /* Кнопка "Поделиться" (XP) */
+        .share-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: linear-gradient(180deg, #FFFFFF, #ECE9D8);
+            color: #000000;
+            border: 1px solid #003C74;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 400;
+            font-family: 'Tahoma', 'Trebuchet MS', 'Roboto', sans-serif;
+            box-shadow: 0 0 0 1px #98B7E9, inset 0 1px 0 rgba(255,255,255,0.8);
+            letter-spacing: 0.3px;
+            line-height: 1;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .share-btn:hover {
+            background: linear-gradient(180deg, #F7F5EF, #D0D0D0);
+            border-color: #0019CF;
+            box-shadow: 0 0 0 1px #6B8ED6, inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .share-btn:active {
+            background: linear-gradient(180deg, #D0D0D0, #F7F5EF);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .share-btn img {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Убираем абсолютное позиционирование для share в карточке */
+        .dx-card .share-card-btn {
+            /* теперь не absolute, управляется общим flex */
+            position: static;
+        }
+
+        /* Clippy */
+        #clippy {
+            transition: bottom 0.6s ease, opacity 0.6s ease;
+        }
+
+        /* Секция Help? */
+        section#dxing-info {
+            background: none;
+            border: 2px solid var(--xp-frame-outer);
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 0 0 1px var(--xp-frame-inner), 0 4px 18px rgba(0,0,0,0.4);
+            margin-top: 2rem; margin-bottom: 2rem;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        section#dxing-info::before {
+            content: '';
+            display: block;
+            background: linear-gradient(180deg, #003FCC, #005AF5, #0068FF, #3388FF, #0068FF, #005AF5, #003FCC);
+            height: 30px;
+            border-radius: 8px 8px 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 2;
+        }
+        section#dxing-info::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 0;
+            width: 100%;
+            bottom: 0;
+            background: 
+                linear-gradient(to bottom, rgba(236,233,216,0) 0%, rgba(236,233,216,0.25) 40%, rgba(236,233,216,0.85) 100%),
+                url('./index_files/Sdr_pan.png') center/cover no-repeat;
+            z-index: 0;
+            pointer-events: none;
+        }
+        section#dxing-info > div {
+            position: relative;
+            z-index: 1;
+            padding-top: 30px;
+        }
+        section#dxing-info .section-title {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            line-height: 30px;
+            color: #FFFFFF !important;
+            z-index: 3;
+        }
+
+        /* Курсоры ожидания Windows XP */
+        body.wait-cursor, body.wait-cursor * {
+            cursor: url('./index_files/default_wait.png') 8 8, wait !important;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; position: absolute; top: 100%; left: 0; width: 100%; background-color: #000; flex-direction: column; padding: 1rem 0; }
+            .nav-links.active { display: flex; }
+            .mobile-menu-btn { display: block; }
+            .card-actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-left"><a href="index.html" class="logo">Alexey</a></div>
+            <div class="nav-right">
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="index.html#home">Главная</a></li>
+                    <li><a href="index.html#about">Обо мне</a></li>
+                    <li><a href="index.html#portfolio">Проекты</a></li>
+                    <li><a href="index.html#social">Контакты</a></li>
+                    <li><a href="index.html#feedback">Обратная связь</a></li>
+                    <li><a href="dx_blog.html">DXing</a></li>
+                </ul>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <section id="blog">
+            <h2 class="section-title">FM DXing уловы</h2>
+            <div class="season-tabs" id="seasonTabs"></div>
+            <div class="cards-grid" id="cardsContainer"></div>
+        </section>
+
+        <section id="dx-forecast">
+            <h2 class="section-title">Прогнозы прохождений</h2>
+            <div style="padding: 2.5rem 1.5rem 1.5rem 1.5rem;">
+                <div id="forecastWrapper" style="margin: 0 auto; display: none;">
+                    <img id="forecastMap" class="forecast-img" src="" alt="Тропо прогноз" style="display:block; width: 100%; border: 1px solid #B5C7E7; border-bottom: none; border-radius: 4px 4px 0 0;">
+                    <a href="https://www.hamqsl.com/solar.html" title="Solar-Terrestrial Data" target="_blank" style="display:block; line-height: 0;">
+                        <img id="hamqslBanner" src="https://www.hamqsl.com/solar101vhf.php" alt="Solar-Terrestrial Data" style="display:block; width: 100%; border: 1px solid #B5C7E7; border-top: none; border-radius: 0 0 4px 4px;">
+                    </a>
+                </div>
+                <p style="margin: 0.8rem 0 1.2rem 0; text-align: center; color: #3A3A3A; font-weight: 400;">Санкт-Петербург. Данные DX Info Centre.</p>
+            </div>
+        </section>
+
+        <section id="global-dx-map-section">
+            <h2 class="section-title">DX Map</h2>
+            <div style="padding: 2rem 1.5rem 1.5rem 1.5rem;">
+                <div id="globalMapContainer" style="height: 420px; border-radius: 4px;"></div>
+                <div id="globalLegend" class="global-legend" style="margin-top: 1rem;"></div>
+            </div>
+        </section>
+
+        <section id="dxing-info">
+            <h2 class="section-title">Help?</h2>
+            <div>
+                <div style="background: rgba(255,255,255,0.7); border: 1px solid #B5C7E7; border-radius: 8px; padding: 1.5rem; margin: 1rem;">
+                    <h3 style="color: #1C3F94; margin-bottom: 0.8rem; font-weight: 400;">все просто</h3>
+                    <p style="margin-bottom: 1.2rem; line-height: 1.7; text-align: justify; font-weight: 400;">
+                        DXing - приём дальних радиосигналов при особых условиях атмосферы. 
+                        FM-радиостанции диапазона 88–108 МГц УКВ 3м в обычных условиях принимаются скучные 40-120 км. Иногда, благодаря тропосферной 
+                        рефракции или отражению от ионосферы Es, сигнал может 
+                        преодолеть 500–2000 км. А ещё бывают отражения от метеорных следов длительностью 3–10 секунд на дистанциях до 2000 км.
+                    </p>
+                    <p style="margin-bottom: 1.2rem; line-height: 1.7; text-align: justify; font-weight: 400;">
+                        Можно взять приёмник, покрутить антенну, поймать одно потом другое совершенно новое среди местного. Можно спаять приёмник и постоянно улучшать его. 
+                        Можно собрать антенну и мериться децебелами.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="dx-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modalTitle"></h2><img src="./index_files/close_btn.png" class="close-btn-img" onclick="closeModal()" alt="close"></div>
+            <div class="modal-body">
+                <div class="video-container" id="videoContainer"></div>
+                <div id="mapContainer"></div>
+                <table class="details-table" id="detailsTable"></table>
+                <!-- Единая строка действий (реакции + поделиться) -->
+                <div class="card-actions" id="modalActionsContainer">
+                    <div class="reactions-block" id="modalReactionsContainer"></div>
+                    <div id="shareContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="image-overlay" id="imageOverlay"><button class="image-close-btn" onclick="closeImageOverlay()">×</button><img src="" alt="" id="overlayImage"></div>
+
+    <div id="clippy" style="position: fixed; bottom: -120px; right: 20px; z-index: 5000; display: flex; align-items: flex-end; gap: 0; transition: bottom 0.6s ease, opacity 0.6s ease; opacity: 0; pointer-events: none;">
+        <div id="clippy-bubble" style="background: #FFFFE1; border: 2px solid #000; border-radius: 10px; padding: 8px 12px; font-family: 'Tahoma', sans-serif; font-size: 0.85rem; max-width: 220px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); position: relative; margin-right: -10px; z-index: 2;">
+            <span id="clippy-message">Ссылка скопирована!</span>
+            <span onclick="hideClippy()" style="position: absolute; top: -5px; right: -5px; background: #D04040; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; pointer-events: auto;">✕</span>
+        </div>
+        <img src="./index_files/clippy.png" alt="Clippy" style="width: 60px; height: auto; pointer-events: auto;">
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('active');
+        });
+
+        let allCards = [], currentSeason = null, currentMap = null, currentCardIndex = null;
+        // В начало скрипта (после let allCards...)
+const reactionsCache = new Map(); // кэш: cardId -> { like, fire, wow }
+
+
+
+
+
+// Новая функция предзагрузки реакций для нескольких карточек
+async function preloadReactions(cards) {
+    const idsToFetch = [];
+    const map = new Map();
+    for (const card of cards) {
+        const cardId = `${card.title}|${card.date}`;
+        if (reactionsCache.has(cardId)) {
+            map.set(cardId, reactionsCache.get(cardId));
+        } else {
+            idsToFetch.push({ card, cardId });
+        }
+    }
+    // Параллельная загрузка недостающих реакций
+    if (idsToFetch.length) {
+        const promises = idsToFetch.map(({ cardId }) => getReactionCounts(cardId));
+        const results = await Promise.all(promises);
+        idsToFetch.forEach(({ cardId }, index) => {
+            const counts = results[index];
+            reactionsCache.set(cardId, counts);
+            map.set(cardId, counts);
+        });
+    }
+    return map; // cardId -> counts
+}
+
+async function renderCards(){
+    const c = document.getElementById('cardsContainer');
+    const cards = allCards.filter(c => c.season === currentSeason);
+    if (!cards.length) { 
+        c.innerHTML = '<p style="padding:1.5rem;color:#3A3A3A;font-weight:400;">Нет данных.</p>'; 
+        return; 
+    }
+
+    // ----- ШАГ 1: загружаем реакции параллельно ДО отрисовки -----
+    const reactionsMap = new Map();
+    const fetchPromises = cards.map(async (card) => {
+        const cardId = `${card.title}|${card.date}`;
+        if (!reactionsCache.has(cardId)) {
+            const counts = await getReactionCounts(cardId);
+            reactionsCache.set(cardId, counts);
+        }
+        reactionsMap.set(cardId, reactionsCache.get(cardId));
+    });
+    await Promise.all(fetchPromises); // ждём все запросы
+
+    // ----- ШАГ 2: строим HTML сразу с цифрами -----
+    const hp = cards.map(async (card, i) => {
+        let img = card.image;
+        if (!img && card.localVideo) img = await generateVideoPoster(card.localVideo);
+        else if (!img && card.video) img = await generateVideoPoster(card.video);
+        else if (!img) img = './index_files/dx1.jpg';
+        
+        const globalIdx = allCards.indexOf(card);
+        const distText = card.distance || (card.latRX && card.latTX ? calcDistance(card.latRX, card.lngRX, card.latTX, card.lngTX)+' км' : '...');
+        const cardId = `${card.title}|${card.date}`;
+        const counts = reactionsMap.get(cardId) || { like: 0, fire: 0, wow: 0 };
+
+        const types = [
+            { type: 'like', emoji: '👍' },
+            { type: 'fire', emoji: '🔥' },
+            { type: 'wow', emoji: '😮' }
+        ];
+        const reactionsHTML = types.map(t => {
+            const c = counts[t.type] || 0;
+            const active = isReactionActive(cardId, t.type) ? ' active' : '';
+            return `<button class="reaction-btn${active}" data-card="${cardId}" data-type="${t.type}" onclick="event.stopPropagation(); handleReactionClick(this)">${t.emoji} <span class="count">${c}</span></button>`;
+        }).join('');
+
+        return `
+        <div class="dx-card" onclick="openDXCard(${i})">
+            <img src="${img}">
+            <div class="dx-card-body">
+                <h3>${card.title}</h3>
+                <p>Дистанция: ${distText}</p>
+                <p>Тип: ${card.type} | ${card.date}</p>
+                <div class="card-actions" id="actions-${globalIdx}">
+                    <div class="reactions-block" id="reactions-${globalIdx}">${reactionsHTML}</div>
+                    <button class="share-btn share-card-btn" onclick="event.stopPropagation(); copyShareLink(${globalIdx})" title="Поделиться ссылкой"><img src="./index_files/icons8-share.svg" alt="Share"></button>
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    c.innerHTML = (await Promise.all(hp)).join('');
+    // Цикл for (const block of reactionBlocks) больше НЕ НУЖЕН — удали его
+}
+        let globalMap = null, globalMarkers = [], globalLines = [];
+        const geocodeCache = new Map(), posterCache = new Map();
+
+        // Cloudflare Worker (D1) – твой endpoint
+        const COUNTAPI_BASE = 'https://tiny-tooth-76d9.supirlelik96.workers.dev';
+
+        const COLOR_PALETTE = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff', '#000000'];
+
+        function getColorForIndex(index) { return COLOR_PALETTE[index % COLOR_PALETTE.length]; }
+        function calcDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+            return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+        }
+
+        function showWaitCursor() {
+            document.body.classList.add('wait-cursor');
+            clearTimeout(window.waitTimer);
+            window.waitTimer = setTimeout(() => document.body.classList.remove('wait-cursor'), 5000);
+        }
+        function hideWaitCursor() { document.body.classList.remove('wait-cursor'); clearTimeout(window.waitTimer); }
+
+        async function getLocationName(lat,lng){
+            const k = `${lat},${lng}`;
+            if (geocodeCache.has(k)) return geocodeCache.get(k);
+            showWaitCursor();
+            try {
+                const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1&accept-language=ru`);
+                const d = await r.json();
+                let n = d.display_name||'';
+                const a = d.address||{};
+                const c = a.city||a.town||a.village||a.municipality||'';
+                const co = a.country||'';
+                n = c&&co ? `${c}, ${co}` : (c||co||'Неизвестно');
+                geocodeCache.set(k, n);
+                return n;
+            } catch(e) { return 'Неизвестно'; }
+            finally { hideWaitCursor(); }
+        }
+
+        async function enrichCardData(card){
+            const e = {...card};
+            if (!e.distance && e.latRX && e.lngRX && e.latTX && e.lngTX) e.distance = calcDistance(e.latRX, e.lngRX, e.latTX, e.lngTX)+' км';
+            if (!e.locationRX && e.latRX && e.lngRX) e.locationRX = await getLocationName(e.latRX, e.lngRX);
+            if (!e.locationTX && e.latTX && e.lngTX) e.locationTX = await getLocationName(e.latTX, e.lngTX);
+            return e;
+        }
+
+        function generateVideoPoster(vs){
+            if (posterCache.has(vs)) return Promise.resolve(posterCache.get(vs));
+            showWaitCursor();
+            return new Promise((res)=>{
+                const v = document.createElement('video');
+                v.crossOrigin='anonymous'; v.preload='auto'; v.muted=true; v.playsInline=true;
+                v.setAttribute('playsinline',''); v.src=vs;
+                let ok = false;
+                const end = (r) => {
+                    if (!ok) { ok=true; posterCache.set(vs,r); res(r); v.pause(); v.removeAttribute('src'); v.load(); v.remove(); hideWaitCursor(); }
+                };
+                v.onloadeddata = ()=>{ if(!ok) v.currentTime=0.5; };
+                v.onseeked = ()=>{
+                    if(ok) return;
+                    try {
+                        const c = document.createElement('canvas');
+                        const vw = v.videoWidth||320, vh = v.videoHeight||180;
+                        c.width=320; c.height=180;
+                        const ctx = c.getContext('2d');
+                        let sx,sy,sw,sh;
+                        if (vw>vh) { sw=vh*(320/180); sh=vh; sx=(vw-sw)/2; sy=0; }
+                        else { sw=vw; sh=vw*(180/320); sx=0; sy=(vh-sh)/3; }
+                        ctx.fillStyle='#000'; ctx.fillRect(0,0,320,180);
+                        ctx.drawImage(v,sx,sy,sw,sh,0,0,320,180);
+                        end(c.toDataURL('image/jpeg',0.85));
+                    } catch(e) { end('./index_files/dx_placeholder.jpg'); }
+                };
+                v.onerror = ()=> end('./index_files/dx_placeholder.jpg');
+                setTimeout(()=>{ if(!ok) end('./index_files/dx_placeholder.jpg'); }, 5000);
+                v.load();
+            });
+        }
+
+        
+
+        async function loadDXData(){
+            try {
+                const r = await fetch(`./dx_data.json?t=${Date.now()}`);
+                if (!r.ok) throw new Error('');
+                allCards = (await r.json()).map(c => {
+                    const card = { ...c, season: String(c.season) };
+                    if (!card.distance && card.latRX && card.lngRX && card.latTX && card.lngTX)
+                        card.distance = calcDistance(card.latRX, card.lngRX, card.latTX, card.lngTX)+' км';
+                    return card;
+                });
+            } catch(e) { allCards = []; }
+        }
+
+        function getSeasons(){ return [...new Set(allCards.map(c=>c.season))].sort((a,b)=>b-a); }
+        function renderSeasonTabs(){
+            const t = document.getElementById('seasonTabs'); t.innerHTML = '';
+            const s = getSeasons(); if (!s.length) return;
+            if (!currentSeason || !s.includes(currentSeason)) currentSeason = s[0];
+            s.forEach(se => {
+                const d = document.createElement('div');
+                d.className = 'season-tab' + (se===currentSeason?' active':'');
+                d.textContent = se;
+                d.onclick = ()=>{ currentSeason=se; renderSeasonTabs(); renderCards(); };
+                t.appendChild(d);
+            });
+        }
+
+        // ---------- Reactions (Cloudflare Worker + localStorage) ----------
+        function getReactionStorageKey(cardId, type) {
+            return `dx_reaction_${cardId}_${type}`;
+        }
+
+        function isReactionActive(cardId, type) {
+            return localStorage.getItem(getReactionStorageKey(cardId, type)) === '1';
+        }
+
+        function setReactionActive(cardId, type, active) {
+            const key = getReactionStorageKey(cardId, type);
+            if (active) localStorage.setItem(key, '1');
+            else localStorage.removeItem(key);
+        }
+
+        async function getReactionCounts(cardId) {
+            try {
+                const res = await fetch(`${COUNTAPI_BASE}/get/dx-blog-reactions/${encodeURIComponent(cardId)}`);
+                const data = await res.json();
+                return data.value || { like: 0, fire: 0, wow: 0 };
+            } catch(e) { return { like: 0, fire: 0, wow: 0 }; }
+        }
+
+        async function incrementReaction(cardId, type) {
+            const res = await fetch(`${COUNTAPI_BASE}/hit/dx-blog-reactions/${encodeURIComponent(cardId)}/${type}`, { method: 'POST' });
+            const data = await res.json();
+            return data.value;
+        }
+
+        async function decrementReaction(cardId, type) {
+            const res = await fetch(`${COUNTAPI_BASE}/unhit/dx-blog-reactions/${encodeURIComponent(cardId)}/${type}`, { method: 'POST' });
+            const data = await res.json();
+            return data.value;
+        }
+
+        async function renderReactionsButtons(card, container) {
+            const cardId = `${card.title}|${card.date}`;
+            const counts = await getReactionCounts(cardId);
+            const types = [
+                { type: 'like', emoji: '👍' },
+                { type: 'fire', emoji: '🔥' },
+                { type: 'wow', emoji: '😮' }
+            ];
+            let html = '';
+            types.forEach(t => {
+                const c = counts[t.type] || 0;
+                const active = isReactionActive(cardId, t.type) ? ' active' : '';
+                html += `<button class="reaction-btn${active}" data-card="${cardId}" data-type="${t.type}" onclick="event.stopPropagation(); handleReactionClick(this)">
+                    ${t.emoji} <span class="count">${c}</span>
+                </button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        async function handleReactionClick(btn) {
+            const cardId = btn.dataset.card;
+            const type = btn.dataset.type;
+            const active = isReactionActive(cardId, type);
+
+            if (!active) {
+                const newValue = await incrementReaction(cardId, type);
+                btn.querySelector('.count').textContent = newValue;
+                btn.classList.add('active');
+                setReactionActive(cardId, type, true);
+            } else {
+                const newValue = await decrementReaction(cardId, type);
+                btn.querySelector('.count').textContent = newValue;
+                btn.classList.remove('active');
+                setReactionActive(cardId, type, false);
+            }
+        }
+
+        async function renderCards(){
+            const c = document.getElementById('cardsContainer');
+            const cards = allCards.filter(c => c.season === currentSeason);
+            if (!cards.length) { c.innerHTML = '<p style="padding:1.5rem;color:#3A3A3A;font-weight:400;">Нет данных.</p>'; return; }
+            const hp = cards.map(async (card, i) => {
+                let img = card.image;
+                if (!img && card.localVideo) img = await generateVideoPoster(card.localVideo);
+                else if (!img && card.video) img = await generateVideoPoster(card.video);
+                else if (!img) img = './index_files/dx1.jpg';
+                const globalIdx = allCards.indexOf(card);
+                const distText = card.distance || (card.latRX && card.latTX ? calcDistance(card.latRX, card.lngRX, card.latTX, card.lngTX)+' км' : '...');
+                return `
+                <div class="dx-card" onclick="openDXCard(${i})">
+                    <img src="${img}">
+                    <div class="dx-card-body">
+                        <h3>${card.title}</h3>
+                        <p>Дистанция: ${distText}</p>
+                        <p>Тип: ${card.type} | ${card.date}</p>
+                        <div class="card-actions" id="actions-${globalIdx}">
+                            <div class="reactions-block" id="reactions-${globalIdx}"></div>
+                            <button class="share-btn share-card-btn" onclick="event.stopPropagation(); copyShareLink(${globalIdx})" title="Поделиться ссылкой"><img src="./index_files/icons8-share.svg" alt="Share"></button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            c.innerHTML = (await Promise.all(hp)).join('');
+            const reactionBlocks = document.querySelectorAll('.reactions-block');
+            for (const block of reactionBlocks) {
+                const idx = block.id.split('-')[1];
+                const card = allCards[parseInt(idx)];
+                if (card) await renderReactionsButtons(card, block);
+            }
+        }
+
+        function createCustomPopup(card, globalIndex, pointType) {
+            const dist = card.distance || (card.latRX && card.latTX ? calcDistance(card.latRX, card.lngRX, card.latTX, card.lngTX)+' км' : 'Н/Д');
+            const container = document.createElement('div');
+            container.className = 'custom-popup';
+            const title = pointType==='rx'?'Точка приема':'Точка передатчика';
+            container.innerHTML = `
+                <h4>${card.title}</h4>
+                <p>${title}</p>
+                <p class="tx-location" style="display:none;">Город: <span></span></p>
+                <p>Тип: ${card.type||'Н/Д'}</p>
+                <p>Дата: ${card.date||'Н/Д'}</p>
+                <p>Дистанция: ${dist}</p>
+                <button class="popup-btn" onclick="openDXCardByGlobalIndex(${globalIndex})">Подробнее</button>
+            `;
+            if (pointType==='tx') {
+                const loc = container.querySelector('.tx-location');
+                const span = loc.querySelector('span');
+                getLocationName(card.latTX, card.lngTX).then(city => {
+                    span.textContent = city;
+                    loc.style.display = 'block';
+                });
+            }
+            return container;
+        }
+
+        function initGlobalMap() {
+            if (globalMap) { globalMap.remove(); globalMap=null; }
+            const mapContainer = document.getElementById('globalMapContainer');
+            if (!mapContainer || !allCards.length) return;
+            globalMap = L.map('globalMapContainer').setView([55, 25], 3);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(globalMap);
+            globalMarkers=[]; globalLines=[];
+            const legendDiv = document.getElementById('globalLegend');
+            legendDiv.innerHTML = '';
+            const bounds = [];
+            allCards.forEach((card, idx) => {
+                if (!card.latRX||!card.lngRX||!card.latTX||!card.lngTX) return;
+                const color = getColorForIndex(idx);
+                const rx = L.circleMarker([card.latRX, card.lngRX], {radius:7, fillColor:color, color:'#000', weight:1.5, fillOpacity:0.9}).addTo(globalMap);
+                rx.bindPopup(createCustomPopup(card, idx, 'rx'));
+                const tx = L.circleMarker([card.latTX, card.lngTX], {radius:8, fillColor:color, color:'#222', weight:2, fillOpacity:0.85}).addTo(globalMap);
+                tx.bindPopup(createCustomPopup(card, idx, 'tx'));
+                const line = L.polyline([[card.latRX,card.lngRX],[card.latTX,card.lngTX]], {color:color, weight:3, opacity:0.8}).addTo(globalMap);
+                globalMarkers.push(rx,tx); globalLines.push(line);
+                bounds.push([card.latRX,card.lngRX],[card.latTX,card.lngTX]);
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `<span class="legend-color" style="background:${color};"></span><span class="legend-text">${card.title}</span>`;
+                item.onclick = ()=> openDXCardByGlobalIndex(idx);
+                legendDiv.appendChild(item);
+            });
+            if (bounds.length) globalMap.fitBounds(bounds, {padding:[30,30]});
+            setTimeout(()=>{ if(globalMap) globalMap.invalidateSize(); }, 250);
+        }
+
+        function openDXCardByGlobalIndex(globalIndex) {
+            if (!allCards[globalIndex]) return;
+            const card = allCards[globalIndex];
+            const season = card.season;
+            if (currentSeason !== season) { currentSeason = season; renderSeasonTabs(); renderCards(); }
+            const cards = allCards.filter(c => c.season === season);
+            const localIndex = cards.findIndex(c => c.title===card.title && c.date===card.date);
+            if (localIndex!==-1) openDXCard(localIndex);
+        }
+
+        function initDetailMap(rxLat,rxLng,txLat,txLng){
+            if (currentMap) { currentMap.remove(); currentMap=null; }
+            const ct = document.getElementById('mapContainer');
+            if (!rxLat||!txLat) { ct.innerHTML='Координаты не заданы.'; return; }
+            const m = L.map('mapContainer').setView([rxLat, rxLng], 4);
+            currentMap = m;
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:''}).addTo(m);
+            L.circleMarker([rxLat,rxLng],{radius:8,fillColor:'#00cc00',color:'#006600',weight:2,fillOpacity:0.9}).addTo(m).bindPopup('Точка приема: '+(allCards[currentCardIndex]?.locationRX||''));
+            L.circleMarker([txLat,txLng],{radius:8,fillColor:'#ff0000',color:'#990000',weight:2,fillOpacity:0.9}).addTo(m).bindPopup('Точка передатчика: '+(allCards[currentCardIndex]?.locationTX||''));
+            L.polyline([[rxLat,rxLng],[txLat,txLng]],{color:'#ff0000',weight:3}).addTo(m);
+            const b = L.latLngBounds([rxLat,rxLng],[txLat,txLng]);
+            m.fitBounds(b, {padding:[50,50]});
+            setTimeout(()=>{ m.invalidateSize(); }, 200);
+        }
+
+        function updateOpenGraph(card) {
+            document.getElementById('og-title').setAttribute('content', card.title);
+            document.getElementById('og-desc').setAttribute('content', card.description || 'FM DX улов');
+            // В качестве изображения берем первый кадр из видео, если есть localVideo, иначе картинку из поля image, либо дефолт
+            let img = card.image;
+            if (!img && card.localVideo) {
+                // для видео постер генерируется асинхронно, но здесь упростим – используем дефолт
+                img = './index_files/dx1.jpg';
+            } else if (!img) {
+                img = './index_files/dx1.jpg';
+            }
+            document.getElementById('og-image').setAttribute('content', img);
+            document.getElementById('og-url').setAttribute('content', window.location.href);
+        }
+
+        async function openDXCard(i){
+            const cards = allCards.filter(c=>c.season===currentSeason);
+            const card = cards[i];
+            if (!card) return;
+            const globalIndex = allCards.indexOf(card);
+            currentCardIndex = i;
+            // playBoostedAudio('./index_files/navigation-start.mp3', 1.25);  // Звук отключён
+
+            // Обновляем Open Graph для шаринга
+            updateOpenGraph(card);
+
+            document.getElementById('modalTitle').textContent = card.title;
+            const vc = document.getElementById('videoContainer');
+            if (card.localVideo) {
+                vc.innerHTML = `<video controls preload="metadata" src="${card.localVideo}"></video>`;
+            } else if (card.video) {
+                vc.innerHTML = `<iframe src="${card.video}" allowfullscreen style="width:100%;height:360px;"></iframe>`;
+            } else {
+                vc.innerHTML = '';
+            }
+            document.getElementById('dx-modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            initDetailMap(card.latRX, card.lngRX, card.latTX, card.lngTX);
+            document.getElementById('detailsTable').innerHTML = '<tr><td colspan="2">Загрузка...</td></tr>';
+            const e = await enrichCardData(card);
+            function imgLink(url, text) {
+                if (!url) return text||'';
+                const esc = url.replace(/"/g,'&quot;');
+                return `${text||''} <a href="#" onclick="openImageOverlay('${esc}'); return false;">(фото)</a>`;
+            }
+            const d = [
+                ['Описание', e.description||''],
+                ['Дистанция', e.distance||''],
+                ['Точка приема', e.locationRX||''],
+                ['Точка передатчика', e.locationTX||''],
+                ['Тип', e.type||''],
+                ['Поляризация', e.polarization||''],
+                ['Антенна', imgLink(e.antennaImage, e.antennaType)],
+                ['Приёмник', imgLink(e.receiverImage, e.receiverName)],
+                ['Дата', e.date||'']
+            ];
+            document.getElementById('detailsTable').innerHTML = d.map(([l,v])=>`<tr><td>${l}</td><td>${v}</td></tr>`).join('');
+
+            // Заполняем строку действий
+            const modalReactions = document.getElementById('modalReactionsContainer');
+            const shareContainer = document.getElementById('shareContainer');
+            await renderReactionsButtons(card, modalReactions);
+            shareContainer.innerHTML = '';
+            const btn = document.createElement('button');
+            btn.className = 'share-btn';
+            btn.innerHTML = '<img src="./index_files/icons8-share.svg" alt="Share"> Поделиться';
+            btn.onclick = () => copyShareLink(globalIndex);
+            shareContainer.appendChild(btn);
+
+            const url = new URL(window.location);
+            url.searchParams.set('card', globalIndex);
+            window.history.replaceState(null, '', url);
+            // Обновляем og:url после изменения URL
+            document.getElementById('og-url').setAttribute('content', window.location.href);
+        }
+
+        function copyShareLink(globalIndex) {
+            const url = new URL(window.location);
+            url.searchParams.set('card', globalIndex);
+            const shareUrl = url.toString();
+            const copyAndNotify = ()=>{
+                showClippy('Ссылка скопирована!');
+                try { new Audio('./index_files/ding.mp3').play(); } catch(e) {}
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(shareUrl).then(copyAndNotify).catch(err => {
+                    console.error(err); showClippy('Не удалось скопировать.');
+                });
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = shareUrl; ta.style.position='fixed'; ta.style.left='-9999px';
+                document.body.appendChild(ta); ta.focus(); ta.select();
+                try { document.execCommand('copy'); copyAndNotify(); } catch(err) { showClippy('Ошибка копирования.'); }
+                document.body.removeChild(ta);
+            }
+        }
+
+        function showClippy(msg) {
+            const el = document.getElementById('clippy');
+            const bubble = document.getElementById('clippy-message');
+            if (!el || !bubble) return;
+            bubble.textContent = msg;
+            el.style.opacity = '1'; el.style.bottom = '20px'; el.style.pointerEvents = 'auto';
+            clearTimeout(window.clippyTimeout);
+            window.clippyTimeout = setTimeout(hideClippy, 5000);
+        }
+        function hideClippy() {
+            const el = document.getElementById('clippy');
+            if (!el) return;
+            el.style.opacity = '0'; el.style.bottom = '-120px'; el.style.pointerEvents = 'none';
+            clearTimeout(window.clippyTimeout);
+        }
+
+        function openImageOverlay(s){ if(!s) return; document.getElementById('overlayImage').src=s; document.getElementById('imageOverlay').classList.add('active'); }
+        function closeImageOverlay(){ document.getElementById('imageOverlay').classList.remove('active'); }
+        function closeModal(){
+            document.getElementById('dx-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('videoContainer').innerHTML = '';
+            if (currentMap) { currentMap.remove(); currentMap=null; }
+        }
+
+        (function() {
+            const wrapper = document.getElementById('forecastWrapper');
+            const forecastImg = document.getElementById('forecastMap');
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth()+1).padStart(2,'0');
+            const dd = String(today.getDate()).padStart(2,'0');
+            forecastImg.src = `https://dxinfocentre.com/tr_map/fcst/eeu006.png?v${yyyy}${mm}${dd}`;
+            function adjustWidth() {
+                if (!forecastImg.complete || forecastImg.naturalWidth===0) return;
+                const pw = wrapper.parentElement.clientWidth;
+                const nw = forecastImg.naturalWidth;
+                const tw = Math.min(nw, pw);
+                wrapper.style.width = tw+'px';
+                wrapper.style.maxWidth = '100%';
+                wrapper.style.display = 'block';
+            }
+            forecastImg.onload = adjustWidth;
+            forecastImg.onerror = ()=>{
+                wrapper.style.width = '100%';
+                wrapper.style.maxWidth = '100%';
+                wrapper.style.display = 'block';
+                forecastImg.style.display = 'none';
+            };
+            window.addEventListener('resize', adjustWidth);
+        })();
+
+        async function checkUrlForCard() {
+            const params = new URLSearchParams(window.location.search);
+            const cardParam = params.get('card');
+            if (cardParam !== null) {
+                const index = parseInt(cardParam, 10);
+                if (!isNaN(index) && index>=0 && index<allCards.length) {
+                    if (!allCards.length) { await loadDXData(); if (!allCards.length) return; }
+                    openDXCardByGlobalIndex(index);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async ()=>{
+            document.documentElement.setAttribute('data-theme', 'winxp');
+            await loadDXData();
+            renderSeasonTabs();
+            renderCards();
+            initGlobalMap();
+            await checkUrlForCard();
+        });
+        window.addEventListener('click', e => {
+            if (e.target===document.getElementById('dx-modal')) closeModal();
+            if (e.target===document.getElementById('imageOverlay')) closeImageOverlay();
+        });
+    </script>
+</body>
+</html>

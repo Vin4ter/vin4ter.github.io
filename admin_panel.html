@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DX Admin Panel — GitHub Sync</title>
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background: #ECE9D8;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.85rem;
+        }
+        th, td {
+            border: 1px solid #B5C7E7;
+            padding: 6px;
+        }
+        th {
+            background: #316AC5;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        input, select {
+            width: 100%;
+            padding: 4px;
+            font-size: 0.8rem;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: 'Tahoma', sans-serif;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .btn-primary {
+            background: #316AC5;
+            color: white;
+        }
+        .btn-success {
+            background: #5AA25A;
+            color: white;
+        }
+        .btn-danger {
+            background: #D04040;
+            color: white;
+        }
+        .btn-warning {
+            background: #FFA500;
+            color: white;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+            align-items: center;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        .token-section {
+            background: white;
+            padding: 15px;
+            border: 1px solid #B5C7E7;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .token-section input {
+            width: 350px;
+            padding: 6px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 DX Data Editor — GitHub Sync</h1>
+
+        <div class="token-section">
+            <label><strong>GitHub Token:</strong></label>
+            <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            <button class="btn-primary" onclick="saveToken()">Сохранить токен</button>
+            <small style="display: block; margin-top: 5px;">
+                Нужен токен с правами <code>repo</code>. <a href="https://github.com/settings/tokens" target="_blank">Создать токен</a>
+            </small>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn-primary" onclick="loadFromGitHub()">📥 Загрузить из GitHub</button>
+            <button class="btn-primary" onclick="loadFromLocal()">📂 Загрузить локальный файл</button>
+            <button class="btn-success" onclick="addRow()">➕ Добавить запись</button>
+            <button class="btn-success" onclick="saveToGitHub()">💾 Сохранить в GitHub</button>
+            <button class="btn-warning" onclick="downloadJSON()">📥 Скачать JSON</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div style="overflow-x: auto;">
+            <table id="dataTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ---------- Конфигурация ----------
+        const REPO_OWNER = 'Vin4ter';
+        const REPO_NAME = 'vin4ter.github.io';
+        const FILE_PATH = 'dx_data.json';
+
+        // ---------- Глобальные переменные ----------
+        let dxData = [];
+        let currentSHA = null;
+        const fields = [
+            'title', 'date', 'season', 'type', 'distance',
+            'locationRX', 'locationTX', 'polarization', 'height',
+            'antennaType', 'antennaDir', 'antennaImage',
+            'receiverName', 'receiverImage',
+            'latRX', 'lngRX', 'latTX', 'lngTX',
+            'localVideo', 'video', 'image', 'description'
+        ];
+
+        // ---------- Работа с токеном ----------
+        function getToken() {
+            return localStorage.getItem('github_token') || '';
+        }
+
+        function saveToken() {
+            const token = document.getElementById('githubToken').value.trim();
+            if (token) {
+                localStorage.setItem('github_token', token);
+                showStatus('Токен сохранён', 'success');
+            } else {
+                localStorage.removeItem('github_token');
+                showStatus('Токен удалён', 'error');
+            }
+        }
+
+        // Инициализация поля токена
+        document.getElementById('githubToken').value = getToken();
+
+        // ---------- Отображение статуса ----------
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status ' + type;
+            setTimeout(() => { el.className = 'status'; }, 5000);
+        }
+
+        // ---------- Загрузка данных ----------
+        async function loadFromGitHub() {
+            const token = getToken();
+            if (!token) {
+                showStatus('Сначала введите GitHub Token!', 'error');
+                return;
+            }
+            try {
+                showStatus('Загрузка из GitHub...', 'success');
+                const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+                const resp = await fetch(url, {
+                    headers: { Authorization: `token ${token}` }
+                });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.message || 'Ошибка загрузки');
+                }
+                const data = await resp.json();
+                currentSHA = data.sha;
+                dxData = JSON.parse(atob(data.content));
+                renderTable();
+                showStatus(`Загружено ${dxData.length} записей из GitHub`, 'success');
+            } catch (e) {
+                showStatus('Ошибка: ' + e.message, 'error');
+            }
+        }
+
+        function loadFromLocal() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const text = await file.text();
+                    dxData = JSON.parse(text);
+                    currentSHA = null;
+                    renderTable();
+                    showStatus(`Загружено ${dxData.length} записей из локального файла`, 'success');
+                } catch (e) {
+                    showStatus('Ошибка парсинга JSON: ' + e.message, 'error');
+                }
+            };
+            input.click();
+        }
+
+        // ---------- Сохранение в GitHub ----------
+        async function saveToGitHub() {
+            const token = getToken();
+            if (!token) {
+                showStatus('Сначала введите GitHub Token!', 'error');
+                return;
+            }
+            if (!currentSHA) {
+                showStatus('Сначала загрузите актуальную версию из GitHub!', 'error');
+                return;
+            }
+            try {
+                showStatus('Сохранение в GitHub...', 'success');
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(dxData, null, 2))));
+                const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+                const body = {
+                    message: 'Обновление DX данных через админ-панель',
+                    content: content,
+                    sha: currentSHA
+                };
+                const resp = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        Authorization: `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.message || 'Ошибка сохранения');
+                }
+                const data = await resp.json();
+                currentSHA = data.content.sha;
+                showStatus('✅ Успешно сохранено! Сайт обновится через 1-2 минуты.', 'success');
+            } catch (e) {
+                showStatus('Ошибка сохранения: ' + e.message, 'error');
+            }
+        }
+
+        function downloadJSON() {
+            const blob = new Blob([JSON.stringify(dxData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dx_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showStatus('JSON скачан', 'success');
+        }
+
+        // ---------- Работа с таблицей ----------
+        function addRow() {
+            const newRow = {};
+            fields.forEach(f => { newRow[f] = ''; });
+            newRow.season = '2025';
+            newRow.date = new Date().toISOString().split('T')[0];
+            dxData.push(newRow);
+            renderTable();
+            showStatus('Новая запись добавлена', 'success');
+        }
+
+        function renderTable() {
+    const thead = document.querySelector('#dataTable thead');
+    const tbody = document.querySelector('#dataTable tbody');
+
+    // Заголовок
+    thead.innerHTML = '<tr>' + fields.map(f => `<th>${f}</th>`).join('') + '<th>Действия</th></tr>';
+
+    // Тело таблицы
+    tbody.innerHTML = dxData.map((row, i) => `
+        <tr>
+            ${fields.map(f => {
+                const val = row[f] !== undefined && row[f] !== null ? String(row[f]) : '';
+                if (f === 'description') {
+                    return `<td><textarea style="width:100%; height:40px;" onchange="updateCell(${i},'${f}',this.value)">${escapeHTML(val)}</textarea></td>`;
+                }
+                return `<td><input type="text" value="${escapeHTML(val)}" onchange="updateCell(${i},'${f}',this.value)"></td>`;
+            }).join('')}
+            <td>
+                <button class="btn-danger" onclick="deleteRow(${i})" style="padding:4px 8px; font-size:0.8rem;">✕</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Функция экранирования HTML
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/'/g, '&#39;');
+}
+
+// Функция обновления ячейки
+function updateCell(index, key, value) {
+    // Преобразуем числа, если это координаты или сезон
+    if (['latRX', 'lngRX', 'latTX', 'lngTX'].includes(key)) {
+        dxData[index][key] = parseFloat(value) || value;
+    } else if (key === 'season') {
+        dxData[index][key] = String(value);
+    } else {
+        dxData[index][key] = value;
+    }
+    showStatus('Данные изменены. Не забудьте сохранить!', 'success');
+}
+
+        function updateCell(index, key, value) {
+            dxData[index][key] = value;
+            // Небольшая подсказка, что данные изменены
+            showStatus('Данные изменены. Не забудьте сохранить!', 'success');
+        }
+
+        function deleteRow(index) {
+            if (confirm('Точно удалить эту запись?')) {
+                dxData.splice(index, 1);
+                renderTable();
+                showStatus('Запись удалена', 'success');
+            }
+        }
+
+        // Загрузка при открытии
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = getToken();
+            if (token) {
+                loadFromGitHub();
+            } else {
+                showStatus('Введите GitHub Token для работы с репозиторием', 'error');
+                // Можно всё равно загрузить через локальный файл
+            }
+        });
+    </script>
+</body>
+</html>
