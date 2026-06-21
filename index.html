@@ -386,57 +386,175 @@
             transform: scale(1.1);
         }
 
-        /* Диалоговое окно Continue? */
-        .xp-continue-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 100000;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Tahoma', sans-serif;
-        }
-        .xp-continue-overlay.active { display: flex; }
-        .xp-continue-dialog {
-            background: #ECE9D8;
-            border: 2px solid var(--xp-frame-outer);
-            border-radius: 10px 10px 6px 6px;
-            box-shadow: 0 0 0 1px var(--xp-frame-inner), 0 10px 40px rgba(0,0,0,0.6);
-            width: 350px;
-            overflow: hidden;
-            position: relative;
-        }
-        .xp-dialog-title {
-            background: linear-gradient(180deg, #003FCC 0%, #005AF5 8%, #0068FF 30%, #3388FF 50%, #0068FF 70%, #005AF5 92%, #003FCC 100%);
-            color: #FFFFFF;
-            font-weight: 700;
-            font-size: 0.9rem;
-            padding: 2px 8px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            min-height: 30px;
-            box-sizing: border-box;
-        }
-        .xp-dialog-body {
-            padding: 20px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: 500;
-            color: #000;
-        }
-        .xp-dialog-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 15px;
-            padding-bottom: 20px;
-        }
+        
+
+/* Диалоговое окно Continue? – шаблон bg_dlg.png */
+.xp-continue-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 100000;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', 'Calibri', 'Roboto', 'Tahoma', sans-serif;
+}
+.xp-continue-overlay.active { display: flex; }
+
+.xp-continue-dialog {
+    width: 337px;
+    height: 222px;
+    background-image: url('./index_files/bg_dlg.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    position: relative;
+    animation: win7Popup 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+@keyframes win7Popup {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Заголовок скрываем */
+.xp-dialog-title {
+    display: none !important;
+}
+
+/* Текст "please, continue?" – по центру */
+.xp-dialog-body {
+    position: relative;
+    top: auto;
+    left: auto;
+    padding: 0;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1A1A1A;
+    background: transparent;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+/* Кнопки – по центру внизу */
+.xp-dialog-buttons {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    display: flex;
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    justify-content: center;
+}
+
+/* Стили кнопок Windows 7 */
+.xp-dialog-buttons .xp-btn {
+    margin-right: 0;
+    border-radius: 3px;
+    border: 1px solid #707070;
+    padding: 3px 15px;
+    font-size: 0.85rem;
+    font-family: 'Segoe UI', 'Calibri', 'Roboto', 'Tahoma', sans-serif;
+    cursor: pointer;
+    box-shadow: none;
+    min-width: auto;
+    text-align: center;
+    color: #1A1A1A;
+    /* Градиент как в .win7-btn */
+    background: #f2f2f2;
+    background: -moz-linear-gradient(top, #f2f2f2 0%, #ebebeb 42%, #dddddd 47%, #cfcfcf 100%);
+    background: -webkit-linear-gradient(top, #f2f2f2 0%, #ebebeb 42%, #dddddd 47%, #cfcfcf 100%);
+    background: linear-gradient(to bottom, #f2f2f2 0%, #ebebeb 42%, #dddddd 47%, #cfcfcf 100%);
+    transition: all 0.1s ease-in;
+}
+.xp-dialog-buttons .xp-btn:hover {
+    outline: 0;
+    background: #eaf6fd;
+    background: -moz-linear-gradient(top, #eaf6fd 0%, #d9f0fc 42%, #bee6fd 47%, #bce5fc 58%, #a7d9f5 100%);
+    background: -webkit-linear-gradient(top, #eaf6fd 0%, #d9f0fc 42%, #bee6fd 47%, #bce5fc 58%, #a7d9f5 100%);
+    background: linear-gradient(to bottom, #eaf6fd 0%, #d9f0fc 42%, #bee6fd 47%, #bce5fc 58%, #a7d9f5 100%);
+    border: 1px solid #3C7FB1;
+    box-shadow: 0 0 3px #A7D9F5;
+}
+.xp-dialog-buttons .xp-btn:active,
+.xp-dialog-buttons .xp-btn.pressed {
+    box-shadow: inset 0 -1px 6px rgba(0, 0, 0, 0.2), inset 0 -0.7em #BEE6FD, 0 0 3px #A7D9F5;
+    background: linear-gradient(to bottom, #cfcfcf 0%, #dddddd 47%, #ebebeb 58%, #f2f2f2 100%);
+}
+
+/* Кнопки – сгруппированы справа */
+.xp-dialog-buttons {
+    position: absolute;
+    bottom: 25px;
+    right: 30px;
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    justify-content: flex-end;
+}
+.xp-dialog-buttons .xp-btn {
+    margin: 0;
+    border-radius: 3px;
+    border: 1px solid #707070;
+    padding: 3px 18px;
+    font-size: 0.85rem;
+    font-family: 'Segoe UI', 'Calibri', 'Roboto', 'Tahoma', sans-serif;
+    cursor: pointer;
+    box-shadow: none;
+    min-width: auto;
+    text-align: center;
+    color: #1A1A1A;
+    background: #f2f2f2;
+    background: -moz-linear-gradient(top, #f2f2f2 0%, #ebebeb 42%, #dddddd 47%, #cfcfcf 100%);
+    background: -webkit-linear-gradient(top, #f2f2f2 0%, #ebebeb 42%, #dddddd 47%, #cfcfcf 100%);
+    background: linear-gradient(to bottom, #f2f2f2 0%, #ebebeb 42%, #dddddd 47%, #cfcfcf 100%);
+    transition: all 0.1s ease-in;
+}
+.xp-dialog-buttons .xp-btn:hover {
+    outline: 0;
+    background: #eaf6fd;
+    background: -moz-linear-gradient(top, #eaf6fd 0%, #d9f0fc 42%, #bee6fd 47%, #bce5fc 58%, #a7d9f5 100%);
+    background: -webkit-linear-gradient(top, #eaf6fd 0%, #d9f0fc 42%, #bee6fd 47%, #bce5fc 58%, #a7d9f5 100%);
+    background: linear-gradient(to bottom, #eaf6fd 0%, #d9f0fc 42%, #bee6fd 47%, #bce5fc 58%, #a7d9f5 100%);
+    border: 1px solid #3C7FB1;
+    box-shadow: 0 0 3px #A7D9F5;
+}
+.xp-dialog-buttons .xp-btn:active,
+.xp-dialog-buttons .xp-btn.pressed {
+    box-shadow: inset 0 -1px 6px rgba(0, 0, 0, 0.2), inset 0 -0.7em #BEE6FD, 0 0 3px #A7D9F5;
+    background: linear-gradient(to bottom, #cfcfcf 0%, #dddddd 47%, #ebebeb 58%, #f2f2f2 100%);
+}
+
+/* Курсор */
+.cursor-arrow {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    z-index: 10;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: left 3.2s cubic-bezier(0.25, 0.8, 0.25, 1.2), top 3.2s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+    image-rendering: pixelated;
+}
 
         /* Кастомный курсор */
         .cursor-arrow {
@@ -848,8 +966,7 @@
                     description: "Пользовательское окружение для российских мобильных операционных систем, разрабатываемое в рамках акселератора Технопитер. Проект направлен на создание современного и удобного интерфейса для отечественных мобильных устройств.",
                     technologies: ["C++", "Qt", "QML", "JavaScript", "C", "cmake", "wayland", "qt-dbus", "network-manager", "brightnessctl", "gsettings", "hwcomposer", "eglfs"],
                     features: ["Адаптивный пользовательский интерфейс", "Поддержка жестов и сенсорного ввода", "Интеграция с системными сервисами", "Поддержка устройств на базе legacy hybris/mainline", "Современный интерфейс для отечественных ос"],
-                    gallery: ["./index_files/integra.png", "./index_files/integra1.png", "./index_files/integra_s1.jpg", "./index_files/integra_s2.jpg", "./index_files/integra_s3.jpg"],
-                    website: "https://integraui.ru"
+                    gallery: ["./index_files/integra.png", "./index_files/integra1.png", "./index_files/integra_s1.jpg", "./index_files/integra_s2.jpg", "./index_files/integra_s3.jpg"]
                 },
                 websdr: {
                     title: "Web sdr server",
@@ -897,7 +1014,8 @@
                     technologies: ["Qt", "QtWidgets", "C++", "MLP", "перцептрон"],
                     features: ["Обучение по эпохам", "Прямое распространение", "Обратное распространение", "рукописный ввод на холсте", "распознавание нарисованной цифры", "подгрузка датасета mnist для обучения"],
                     gallery: ["./index_files/na.png", "./index_files/file-322.png", "./index_files/file-323.png", "./index_files/file-324.png", "./index_files/file-325.png", "./index_files/file-326.png", "./index_files/file-327.png", "./index_files/file-328.png"],
-                    links: [{ type: "github", url: "https://github.com/Vin4ter/qt6-neurol-analyzer", text: "Исходный код" }]
+                    links: [{ type: "github", url: "https://github.com/Vin4ter/qt6-neurol-analyzer", text: "Исходный код" }],
+                        website: "./index_files/my_nyrol_work.pdf"
                 }
             };
 
@@ -1055,18 +1173,30 @@ footerObserver.observe(document.querySelector('footer'));
                 document.getElementById('modal-features').innerHTML = project.features ? project.features.map(f => `<li>${f}</li>`).join('') : '';
                 document.getElementById('modal-technologies').innerHTML = project.technologies.map(t => `<span class="tech-tag">${t}</span>`).join('');
 
-                const linksContainer = document.getElementById('modal-links');
-                linksContainer.innerHTML = '';
-                if (project.links) {
-                    project.links.forEach(link => {
-                        const a = document.createElement('a');
-                        a.href = link.url;
-                        a.className = `project-link ${link.type || ''}`;
-                        a.target = '_blank';
-                        a.innerHTML = `🔗 ${link.text}`;
-                        linksContainer.appendChild(a);
-                    });
-                }
+            const linksContainer = document.getElementById('modal-links');
+linksContainer.innerHTML = '';
+
+// Обработка массива links
+if (project.links) {
+    project.links.forEach(link => {
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.className = `project-link ${link.type || ''}`;
+        a.target = '_blank';
+        a.innerHTML = `🔗 ${link.text}`;
+        linksContainer.appendChild(a);
+    });
+}
+
+// Обработка одиночного website
+if (project.website) {
+    const websiteLink = document.createElement('a');
+    websiteLink.href = project.website;
+    websiteLink.className = 'project-link';
+    websiteLink.target = '_blank';
+    websiteLink.innerHTML = 'статья/публикация';
+    linksContainer.appendChild(websiteLink);
+}
 
                 document.getElementById('project-modal').style.display = 'block';
                 document.body.style.overflow = 'hidden';
