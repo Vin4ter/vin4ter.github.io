@@ -426,6 +426,46 @@
     "lngTX": 28.1864,
     "season": 2026,
     "description": "Yle Suomi, Финляндия (предположительно Лаппеенранта). Приём из Оредежа, Лужский район на TEF6686"
+},
+{
+    "title": "LRT Radijas - 101.9 МГц",
+    "video": null,
+    "localVideo": "./dx_videos/lrt_10190.mp4",
+    "type": "Тропо",
+    "antennaDir": "Юго-Запад",
+    "polarization": "Горизонтальная",
+    "height": "60 м",
+    "antennaType": "телескоп 1.2 м",
+    "antennaImage": null,
+    "date": "22.06.2026",
+    "receiverName": "TEF6686",
+    "receiverImage": null,
+    "latRX": 58.8167,
+    "lngRX": 30.3333,
+    "latTX": 55.5333,
+    "lngTX": 25.1000,
+    "season": 2026,
+    "description": "LRT Radijas, Литва (Аникщяй). RDS: LRT, PI 0xC221, Приём из Оредежа на TEF6686, телескоп 1.2 м, горизонтальная поляризация."
+},
+{
+    "title": "Sconto - 94.2 МГц",
+    "video": null,
+    "localVideo": "./dx_videos/sconto_942_2026.mp4",
+    "type": "Тропо",
+    "antennaDir": "Юго-Запад",
+    "polarization": "Горизонтальная",
+    "height": "60 м",
+    "antennaType": "телескоп 1.2 м",
+    "antennaImage": null,
+    "date": "23.06.2026",
+    "receiverName": "TEF6686",
+    "receiverImage": "./index_files/1box.jpg",
+    "latRX": 58.8167,
+    "lngRX": 30.3333,
+    "latTX": 56.9679,
+    "lngTX": 26.3088,
+    "season": 2026,
+    "description": "Sconto, Латвия (Цесвайне). Приём из Оредежа на TEF6686, телескоп 1.2 м, горизонтальная поляризация."
 }
 
 ]
